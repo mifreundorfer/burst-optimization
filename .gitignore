@@ -1,0 +1,18 @@
+.vs
+.vscode
+.vsconfig
+
+*.user
+*.userprefs
+
+#ignore unity generated directories
+/obj/
+/Library/
+/Temp/
+/Logs/
+/UserSettings/
+
+#ignore unity generated project files in root directory
+/*.csproj
+/*.sln
+
