@@ -12,6 +12,7 @@ public class ImageResizing : MonoBehaviour
         ScalarUnsafe,
         Vectorized,
         SSE,
+        AVX,
     }
 
     [SerializeField]
@@ -70,6 +71,11 @@ public class ImageResizing : MonoBehaviour
                     outputPixels, outputWidth, outputHeight);
                 break;
 
+            case Mode.AVX:
+                ResizeAVX.Resize(inputPixels, inputTexture.width, inputTexture.height,
+                    outputPixels, outputWidth, outputHeight);
+                break;
+
             default:
                 throw new Exception("Invalid Mode enum");
         }
@@ -102,6 +108,11 @@ public class ImageResizing : MonoBehaviour
 
             case Mode.SSE:
                 benchmarkResult = ResizeSSE.Benchmark(inputPixels, inputTexture.width, inputTexture.height,
+                    outputPixels, outputWidth, outputHeight, benchmarkIterations);
+                break;
+
+            case Mode.AVX:
+                benchmarkResult = ResizeAVX.Benchmark(inputPixels, inputTexture.width, inputTexture.height,
                     outputPixels, outputWidth, outputHeight, benchmarkIterations);
                 break;
 
