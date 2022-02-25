@@ -239,6 +239,7 @@ MonoBehaviour:
   inputTexture: {fileID: 2800000, guid: c57137ec5a7529d489b1b7bd8138a5a4, type: 3}
   outputWidth: 900
   outputHeight: 825
+  benchmarkIterations: 100
 --- !u!4 &1606257617
 Transform:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using Unity.Collections;
 
 public class ImageResizing : MonoBehaviour
 {
@@ -19,6 +20,9 @@ public class ImageResizing : MonoBehaviour
     [SerializeField]
     int outputHeight = 825;
 
+    [SerializeField]
+    int benchmarkIterations = 100;
+
     Texture2D outputTexture;
 
     Mode currentMode = Mode.Scalar;
@@ -32,6 +36,45 @@ public class ImageResizing : MonoBehaviour
             filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp,
         };
+
+        ResizeImage();
+    }
+
+    void ResizeImage()
+    {
+        using NativeArray<Color32> inputPixels = new NativeArray<Color32>(inputTexture.GetPixels32(), Allocator.TempJob);
+        using NativeArray<Color32> outputPixels = new NativeArray<Color32>(outputWidth * outputHeight, Allocator.TempJob);
+
+        switch (currentMode)
+        {
+            case Mode.Scalar:
+                ResizeScalar.Resize(inputPixels, inputTexture.width, inputTexture.height,
+                    outputPixels, outputWidth, outputHeight);
+                break;
+
+            default:
+                throw new Exception("Invalid Mode enum");
+        }
+
+        outputTexture.SetPixelData(outputPixels, 0);
+        outputTexture.Apply(false, false);
+    }
+
+    void RunBenchmark()
+    {
+        using NativeArray<Color32> inputPixels = new NativeArray<Color32>(inputTexture.GetPixels32(), Allocator.TempJob);
+        using NativeArray<Color32> outputPixels = new NativeArray<Color32>(outputWidth * outputHeight, Allocator.TempJob);
+
+        switch (currentMode)
+        {
+            case Mode.Scalar:
+                benchmarkResult = ResizeScalar.Benchmark(inputPixels, inputTexture.width, inputTexture.height,
+                    outputPixels, outputWidth, outputHeight, benchmarkIterations);
+                break;
+
+            default:
+                throw new Exception("Invalid Mode enum");
+        }
     }
 
     void OnGUI()
@@ -50,6 +93,7 @@ public class ImageResizing : MonoBehaviour
                 if (GUILayout.Button(name))
                 {
                     currentMode = mode;
+                    ResizeImage();
                 }
             }
 
@@ -68,7 +112,7 @@ public class ImageResizing : MonoBehaviour
             GUILayout.Label($"Current Mode: {currentMode}");
             if (GUILayout.Button("Benchmark"))
             {
-
+                RunBenchmark();
             }
 
             GUILayout.Label($"Benchmark Result: {benchmarkResult:f1}ms");
