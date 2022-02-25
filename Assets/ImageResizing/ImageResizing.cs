@@ -9,6 +9,7 @@ public class ImageResizing : MonoBehaviour
     enum Mode
     {
         Scalar,
+        ScalarUnsafe,
     }
 
     [SerializeField]
@@ -52,6 +53,11 @@ public class ImageResizing : MonoBehaviour
                     outputPixels, outputWidth, outputHeight);
                 break;
 
+            case Mode.ScalarUnsafe:
+                ResizeScalarUnsafe.Resize(inputPixels, inputTexture.width, inputTexture.height,
+                    outputPixels, outputWidth, outputHeight);
+                break;
+
             default:
                 throw new Exception("Invalid Mode enum");
         }
@@ -69,6 +75,11 @@ public class ImageResizing : MonoBehaviour
         {
             case Mode.Scalar:
                 benchmarkResult = ResizeScalar.Benchmark(inputPixels, inputTexture.width, inputTexture.height,
+                    outputPixels, outputWidth, outputHeight, benchmarkIterations);
+                break;
+
+            case Mode.ScalarUnsafe:
+                benchmarkResult = ResizeScalarUnsafe.Benchmark(inputPixels, inputTexture.width, inputTexture.height,
                     outputPixels, outputWidth, outputHeight, benchmarkIterations);
                 break;
 

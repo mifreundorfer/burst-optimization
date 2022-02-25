@@ -3,12 +3,13 @@ using System.Diagnostics;
 using UnityEngine;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
-public static class ResizeScalar
+public static class ResizeScalarUnsafe
 {
     public static void Resize(NativeArray<Color32> inputPixels, int inputWidth, int inputHeight,
         NativeArray<Color32> outputPixels, int outputWidth, int outputHeight)
@@ -81,7 +82,7 @@ public static class ResizeScalar
     }
 
     [BurstCompile(CompileSynchronously = true, DisableSafetyChecks = true)]
-    struct ResizeJob : IJobParallelFor
+    unsafe struct ResizeJob : IJobParallelFor
     {
         [ReadOnly, NativeDisableParallelForRestriction]
         public NativeArray<Color32> inputPixels;
@@ -99,6 +100,9 @@ public static class ResizeScalar
 
             float invOutputWidth = 1.0f / outputWidth;
             float invOutputHeight = 1.0f / outputHeight;
+
+            Color32* inputPixelsPtr = (Color32*)inputPixels.GetUnsafeReadOnlyPtr();
+            Color32* outputPixelsPtr = (Color32*)outputPixels.GetUnsafePtr();
 
             for (int x = 0; x < outputWidth; x++)
             {
@@ -128,10 +132,10 @@ public static class ResizeScalar
                 highY = math.clamp(highY, 0, inputHeight - 1);
 
                 // sampling
-                Color32 s11 = inputPixels[lowX + lowY * inputWidth];
-                Color32 s21 = inputPixels[highX + lowY * inputWidth];
-                Color32 s12 = inputPixels[lowX + highY * inputWidth];
-                Color32 s22 = inputPixels[highX + highY * inputWidth];
+                Color32 s11 = inputPixelsPtr[lowX + lowY * inputWidth];
+                Color32 s21 = inputPixelsPtr[highX + lowY * inputWidth];
+                Color32 s12 = inputPixelsPtr[lowX + highY * inputWidth];
+                Color32 s22 = inputPixelsPtr[highX + highY * inputWidth];
 
                 // unorm to float conversion
                 float4 px11;
@@ -186,7 +190,7 @@ public static class ResizeScalar
                     FloatToUNorm8(pixel.w)
                 );
 
-                outputPixels[x + y * outputWidth] = result;
+                outputPixelsPtr[x + y * outputWidth] = result;
             }
         }
 
