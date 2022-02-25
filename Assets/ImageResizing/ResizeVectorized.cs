@@ -2,12 +2,16 @@ using System;
 using System.Diagnostics;
 using UnityEngine;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+
+using static Unity.Burst.Intrinsics.X86.Sse;
+using static Unity.Burst.Intrinsics.X86.Sse2;
 
 public static class ResizeVectorized
 {
@@ -311,30 +315,67 @@ public static class ResizeVectorized
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int4 FloatToUNorm8Srgb(float4 value)
         {
-            float4 almostone = math.asfloat(new uint4(0x3f7fffff));
-            float4 minval = math.asfloat(new uint4((127 - 13) << 23));
+            if (X86.Sse2.IsSse2Supported)
+            {
+                v128 val = new v128(value.x, value.y, value.z, value.w);
 
-            // Clamp to [2^(-13), 1-eps]; these two values map to 0 and 1, respectively.
-            // The tests are carefully written so that NaNs map to 0, same as in the reference
-            // implementation.
-            value = math.max(value, minval); // written this way to catch NaNs
-            value = math.min(value, almostone);
+                v128 clampmin = set1_epi32((127 - 13) << 23);
+                v128 almostone = set1_epi32(0x3f7fffff);
+                v128 lutthresh = set1_epi32(0x3b800000);
+                v128 mantmask = set1_epi32(0xff);
+                v128 topscale = set1_epi32(0x02000000);
 
-            // Do the table lookup and unpack bias, scale
-            uint4 valueU = math.asuint(value);
-            uint4 tabIdx = (valueU - math.asuint(minval)) >> 20;
-            uint4 tab = new uint4(
-                fp32ToSrgb8Tab4[tabIdx[0]],
-                fp32ToSrgb8Tab4[tabIdx[1]],
-                fp32ToSrgb8Tab4[tabIdx[2]],
-                fp32ToSrgb8Tab4[tabIdx[3]]
-            );
-            uint4 bias = (tab >> 16) << 9;
-            uint4 scale = tab & 0xffff;
+                // Clamp to [2^(-13), 1-eps]; these two values map to 0 and 1, respectively.
+                // The tests are carefully written so that NaNs map to 0, same as in the reference
+                // implementation.
+                val = max_ps(val, clampmin); // written this way to catch NaNs
+                val = min_ps(val, almostone);
 
-            // Grab next-highest mantissa bits and perform linear interpolation
-            uint4 t = (valueU >> 12) & 0xff;
-            return (int4)((bias + scale * t) >> 16);
+                // Do the table lookup and unpack bias, scale
+                v128 tabIdx = srli_epi32(val, 20);
+
+                v128 tabval = setr_epi32(
+                    (int)fp32ToSrgb8Tab4[tabIdx.UInt0 - (127 - 13) * 8],
+                    (int)fp32ToSrgb8Tab4[tabIdx.UInt1 - (127 - 13) * 8],
+                    (int)fp32ToSrgb8Tab4[tabIdx.UInt2 - (127 - 13) * 8],
+                    (int)fp32ToSrgb8Tab4[tabIdx.UInt3 - (127 - 13) * 8]
+                );
+
+                v128 tabmult1 = srli_epi32(val, 12);
+                v128 tabmult2 = and_si128(tabmult1, mantmask);
+                v128 tabmult3 = or_si128(tabmult2, topscale);
+                v128 tabprod = madd_epi16(tabval, tabmult3);
+                v128 result = srli_epi32(tabprod, 16);
+
+                return new int4((int)result.UInt0, (int)result.UInt1, (int)result.UInt2, (int)result.UInt3);
+            }
+            else
+            {
+                float4 almostone = math.asfloat(new uint4(0x3f7fffff));
+                float4 minval = math.asfloat(new uint4((127 - 13) << 23));
+
+                // Clamp to [2^(-13), 1-eps]; these two values map to 0 and 1, respectively.
+                // The tests are carefully written so that NaNs map to 0, same as in the reference
+                // implementation.
+                value = math.max(value, minval); // written this way to catch NaNs
+                value = math.min(value, almostone);
+
+                // Do the table lookup and unpack bias, scale
+                uint4 valueU = math.asuint(value);
+                uint4 tabIdx = (valueU - math.asuint(minval)) >> 20;
+                uint4 tab = new uint4(
+                    fp32ToSrgb8Tab4[tabIdx[0]],
+                    fp32ToSrgb8Tab4[tabIdx[1]],
+                    fp32ToSrgb8Tab4[tabIdx[2]],
+                    fp32ToSrgb8Tab4[tabIdx[3]]
+                );
+                uint4 bias = (tab >> 16) << 9;
+                uint4 scale = tab & 0xffff;
+
+                // Grab next-highest mantissa bits and perform linear interpolation
+                uint4 t = (valueU >> 12) & 0xff;
+                return (int4)((bias + scale * t) >> 16);
+            }
         }
 
         static readonly float[] Srgb8ToF32 = new float[256]
