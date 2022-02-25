@@ -116,9 +116,6 @@ public static class ResizeSSE
             v128 inMaxX = set1_epi32(this.inputWidth - 1);
             v128 inMaxY = set1_epi32(this.inputHeight - 1);
 
-            Color32* inputPixelsPtr = (Color32*)inputPixels.GetUnsafeReadOnlyPtr();
-            Color32* outputPixelsPtr = (Color32*)outputPixels.GetUnsafePtr();
-
             Color32 store0;
             Color32 store1;
             Color32 store2;
@@ -162,25 +159,25 @@ public static class ResizeSSE
                 v128 offset22 = add_epi32(highX, mullo_epi32(highY, inputWidth));
 
                 // sampling
-                Color32 s11_0 = inputPixelsPtr[offset11.UInt0];
-                Color32 s21_0 = inputPixelsPtr[offset21.UInt0];
-                Color32 s12_0 = inputPixelsPtr[offset12.UInt0];
-                Color32 s22_0 = inputPixelsPtr[offset22.UInt0];
+                Color32 s11_0 = inputPixels[(int)offset11.UInt0];
+                Color32 s21_0 = inputPixels[(int)offset21.UInt0];
+                Color32 s12_0 = inputPixels[(int)offset12.UInt0];
+                Color32 s22_0 = inputPixels[(int)offset22.UInt0];
 
-                Color32 s11_1 = inputPixelsPtr[offset11.UInt1];
-                Color32 s21_1 = inputPixelsPtr[offset21.UInt1];
-                Color32 s12_1 = inputPixelsPtr[offset12.UInt1];
-                Color32 s22_1 = inputPixelsPtr[offset22.UInt1];
+                Color32 s11_1 = inputPixels[(int)offset11.UInt1];
+                Color32 s21_1 = inputPixels[(int)offset21.UInt1];
+                Color32 s12_1 = inputPixels[(int)offset12.UInt1];
+                Color32 s22_1 = inputPixels[(int)offset22.UInt1];
 
-                Color32 s11_2 = inputPixelsPtr[offset11.UInt2];
-                Color32 s21_2 = inputPixelsPtr[offset21.UInt2];
-                Color32 s12_2 = inputPixelsPtr[offset12.UInt2];
-                Color32 s22_2 = inputPixelsPtr[offset22.UInt2];
+                Color32 s11_2 = inputPixels[(int)offset11.UInt2];
+                Color32 s21_2 = inputPixels[(int)offset21.UInt2];
+                Color32 s12_2 = inputPixels[(int)offset12.UInt2];
+                Color32 s22_2 = inputPixels[(int)offset22.UInt2];
 
-                Color32 s11_3 = inputPixelsPtr[offset11.UInt3];
-                Color32 s21_3 = inputPixelsPtr[offset21.UInt3];
-                Color32 s12_3 = inputPixelsPtr[offset12.UInt3];
-                Color32 s22_3 = inputPixelsPtr[offset22.UInt3];
+                Color32 s11_3 = inputPixels[(int)offset11.UInt3];
+                Color32 s21_3 = inputPixels[(int)offset21.UInt3];
+                Color32 s12_3 = inputPixels[(int)offset12.UInt3];
+                Color32 s22_3 = inputPixels[(int)offset22.UInt3];
 
                 // interleave samples
                 v128 s11r = setr_epi32(s11_0.r, s11_1.r, s11_2.r, s11_3.r);
@@ -258,10 +255,10 @@ public static class ResizeSSE
                 if (i >= outputWidth - 4)
                     break;
 
-                outputPixelsPtr[storeLocation.UInt0] = store0;
-                outputPixelsPtr[storeLocation.UInt1] = store1;
-                outputPixelsPtr[storeLocation.UInt2] = store2;
-                outputPixelsPtr[storeLocation.UInt3] = store3;
+                outputPixels[(int)storeLocation.UInt0] = store0;
+                outputPixels[(int)storeLocation.UInt1] = store1;
+                outputPixels[(int)storeLocation.UInt2] = store2;
+                outputPixels[(int)storeLocation.UInt3] = store3;
 
                 i += 4;
             }
@@ -269,13 +266,13 @@ public static class ResizeSSE
             // The last store might not be aligned with the simd lane size.
             // Store only pixels that are still in bounds of the output pixels array.
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation.UInt0] = store0;
+                outputPixels[(int)storeLocation.UInt0] = store0;
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation.UInt1] = store1;
+                outputPixels[(int)storeLocation.UInt1] = store1;
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation.UInt2] = store2;
+                outputPixels[(int)storeLocation.UInt2] = store2;
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation.UInt3] = store3;
+                outputPixels[(int)storeLocation.UInt3] = store3;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
