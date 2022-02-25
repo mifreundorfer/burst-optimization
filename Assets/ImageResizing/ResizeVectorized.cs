@@ -106,9 +106,6 @@ public static class ResizeVectorized
             float4 invOutputWidth = new float4(1.0f / outputWidth);
             float4 invOutputHeight = new float4(1.0f / outputHeight);
 
-            Color32* inputPixelsPtr = (Color32*)inputPixels.GetUnsafeReadOnlyPtr();
-            Color32* outputPixelsPtr = (Color32*)outputPixels.GetUnsafePtr();
-
             Color32 store0;
             Color32 store1;
             Color32 store2;
@@ -152,25 +149,25 @@ public static class ResizeVectorized
                 int4 offset22 = highX + highY * inputWidth;
 
                 // sampling
-                Color32 s11_0 = inputPixelsPtr[offset11[0]];
-                Color32 s21_0 = inputPixelsPtr[offset21[0]];
-                Color32 s12_0 = inputPixelsPtr[offset12[0]];
-                Color32 s22_0 = inputPixelsPtr[offset22[0]];
+                Color32 s11_0 = inputPixels[offset11[0]];
+                Color32 s21_0 = inputPixels[offset21[0]];
+                Color32 s12_0 = inputPixels[offset12[0]];
+                Color32 s22_0 = inputPixels[offset22[0]];
 
-                Color32 s11_1 = inputPixelsPtr[offset11[1]];
-                Color32 s21_1 = inputPixelsPtr[offset21[1]];
-                Color32 s12_1 = inputPixelsPtr[offset12[1]];
-                Color32 s22_1 = inputPixelsPtr[offset22[1]];
+                Color32 s11_1 = inputPixels[offset11[1]];
+                Color32 s21_1 = inputPixels[offset21[1]];
+                Color32 s12_1 = inputPixels[offset12[1]];
+                Color32 s22_1 = inputPixels[offset22[1]];
 
-                Color32 s11_2 = inputPixelsPtr[offset11[2]];
-                Color32 s21_2 = inputPixelsPtr[offset21[2]];
-                Color32 s12_2 = inputPixelsPtr[offset12[2]];
-                Color32 s22_2 = inputPixelsPtr[offset22[2]];
+                Color32 s11_2 = inputPixels[offset11[2]];
+                Color32 s21_2 = inputPixels[offset21[2]];
+                Color32 s12_2 = inputPixels[offset12[2]];
+                Color32 s22_2 = inputPixels[offset22[2]];
 
-                Color32 s11_3 = inputPixelsPtr[offset11[3]];
-                Color32 s21_3 = inputPixelsPtr[offset21[3]];
-                Color32 s12_3 = inputPixelsPtr[offset12[3]];
-                Color32 s22_3 = inputPixelsPtr[offset22[3]];
+                Color32 s11_3 = inputPixels[offset11[3]];
+                Color32 s21_3 = inputPixels[offset21[3]];
+                Color32 s12_3 = inputPixels[offset12[3]];
+                Color32 s22_3 = inputPixels[offset22[3]];
 
                 // interleave samples
                 int4 s11r = new int4(s11_0.r, s11_1.r, s11_2.r, s11_3.r);
@@ -248,10 +245,10 @@ public static class ResizeVectorized
                 if (i >= outputWidth - 4)
                     break;
 
-                outputPixelsPtr[storeLocation[0]] = store0;
-                outputPixelsPtr[storeLocation[1]] = store1;
-                outputPixelsPtr[storeLocation[2]] = store2;
-                outputPixelsPtr[storeLocation[3]] = store3;
+                outputPixels[storeLocation[0]] = store0;
+                outputPixels[storeLocation[1]] = store1;
+                outputPixels[storeLocation[2]] = store2;
+                outputPixels[storeLocation[3]] = store3;
 
                 i += 4;
             }
@@ -259,13 +256,13 @@ public static class ResizeVectorized
             // The last store might not be aligned with the simd lane size.
             // Store only pixels that are still in bounds of the output pixels array.
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation[0]] = store0;
+                outputPixels[storeLocation[0]] = store0;
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation[1]] = store1;
+                outputPixels[storeLocation[1]] = store1;
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation[2]] = store2;
+                outputPixels[storeLocation[2]] = store2;
             if (i++ < outputWidth)
-                outputPixelsPtr[storeLocation[3]] = store3;
+                outputPixels[storeLocation[3]] = store3;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
